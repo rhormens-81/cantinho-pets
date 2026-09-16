@@ -31,4 +31,15 @@ CREATE TABLE vendas (
     FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
 );
 
+CREATE TABLE despesas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    data_despesa DATE NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Pendente',
+    tipo VARCHAR(50) DEFAULT 'essencial',
+    valor DECIMAL(10,2) NOT NULL,
+    dono VARCHAR(100),
+    fator VARCHAR(100)
+);
+
 
