@@ -1,0 +1,315 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+:root {
+    --sidebar-width: 220px; 
+    --sidebar-collapsed-width: 85px; 
+    
+    /* NOVAS CORES DO MENU LATERAL */
+    --bg-sidebar: #e91e63; /* Rosa Forte (Pink) */
+    --text-sidebar: #ffe6eb; /* Rosa super clarinho para dar contraste */
+    --hover-sidebar: #ffffff; /* Fundo branco ao passar o mouse */
+    
+    --accent-color: #ff6b8b; /* Cor de destaque dos botões do sistema */
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif; 
+}
+
+body { 
+    display: flex; 
+    background-color: #f8f9fa; 
+    min-height: 100vh; 
+    overflow-x: hidden;
+}
+
+/* ==================================
+   MENU LATERAL (SIDEBAR)
+=================================== */
+.sidebar { 
+    width: var(--sidebar-width); 
+    min-width: var(--sidebar-width);
+    background-color: var(--bg-sidebar); 
+    color: #fff; 
+    display: flex; 
+    flex-direction: column; 
+    border-radius: 0 20px 20px 0; 
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1); 
+    z-index: 10;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    position: relative;
+    padding-top: 40px;
+}
+
+/* Estado Recolhido */
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+    min-width: var(--sidebar-collapsed-width);
+}
+
+/* Botão Flutuante (Toggle) */
+.toggle-btn {
+    position: absolute;
+    top: 50px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 20;
+    transition: transform 0.4s ease;
+    color: var(--bg-sidebar);
+}
+
+.sidebar.collapsed .toggle-btn {
+    transform: rotate(180deg);
+}
+
+/* Perfil (Cachorro) */
+.user-profile {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    margin-bottom: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.profile-img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    min-width: 45px;
+    border: 2px solid #fff;
+}
+
+.user-info {
+    margin-left: 15px;
+    transition: opacity 0.3s;
+}
+
+.sidebar.collapsed .user-info {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.user-role {
+    font-size: 10px;
+    color: #ffd6e0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Links do Menu */
+.menu-items {
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px;
+}
+
+.sidebar a { 
+    text-decoration: none; 
+    color: var(--text-sidebar); 
+    padding: 12px; 
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; 
+    border-radius: 12px; 
+    transition: all 0.3s ease; 
+    font-weight: 500; 
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar a i {
+    min-width: 30px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.sidebar a .menu-text {
+    margin-left: 10px;
+    transition: opacity 0.3s;
+}
+
+.sidebar.collapsed a .menu-text {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Ajuste das cores no hover para destacar no fundo rosa forte */
+.sidebar a:hover, .sidebar a.active { 
+    background-color: var(--hover-sidebar); 
+    color: var(--bg-sidebar); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* ==================================
+   ÁREA PRINCIPAL (CONTEÚDO)
+=================================== */
+.main-content { 
+    flex: 1; 
+    padding: 40px; 
+    overflow-y: auto; 
+    display: block !important; 
+    width: 100%;
+    max-width: calc(100vw - var(--sidebar-width));
+    transition: max-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+}
+
+.sidebar.collapsed ~ .main-content {
+    max-width: calc(100vw - var(--sidebar-collapsed-width));
+}
+
+.page-title { 
+    color: var(--accent-color); 
+    font-size: 26px; 
+    font-weight: 600; 
+    margin-bottom: 25px; 
+    display: block; 
+}
+
+/* Cartões e Formulários */
+.card { 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.03); 
+    margin-bottom: 30px; 
+    border-top: 4px solid var(--accent-color); 
+    display: block;
+    width: 100%;
+}
+.form-group { 
+    margin-bottom: 15px; 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%;
+}
+.form-group label { 
+    font-size: 14px; 
+    color: #555; 
+    margin-bottom: 8px; 
+    font-weight: 500; 
+}
+.form-control { 
+    width: 100%; 
+    padding: 12px; 
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    outline: none; 
+    transition: border 0.3s; 
+    background: #fafafa; 
+}
+.form-control:focus { border-color: var(--accent-color); background: #fff; }
+
+.row { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 20px; 
+    width: 100%;
+}
+.col { 
+    flex: 1; 
+    min-width: 200px; 
+}
+
+/* Botões */
+.btn { 
+    padding: 12px 20px; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 500; 
+    transition: 0.3s; 
+    text-decoration: none; 
+    display: inline-block; 
+    text-align: center; 
+}
+.btn-primary { background-color: var(--accent-color); color: #fff; }
+.btn-primary:hover { background-color: #e65574; }
+.btn-warning { background-color: #ffb74d; color: #fff; }
+.btn-warning:hover { background-color: #e5a445; }
+.btn-danger { background-color: #e57373; color: #fff; }
+.btn-danger:hover { background-color: #cf6666; }
+
+/* Dashboards Responsivos (Cards de Valores) */
+.dash-cards { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+    gap: 20px; 
+    margin-bottom: 30px; 
+}
+.dash-card { 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+    border-left: 5px solid var(--accent-color); 
+}
+.dash-card h3 { font-size: 15px; color: #888; font-weight: 500; margin-bottom: 8px; }
+.dash-card h2 { font-size: 28px; color: #2c3e50; }
+
+/* Tabelas Responsivas */
+.table-responsive { overflow-x: auto; width: 100%; }
+table { width: 100%; border-collapse: collapse; min-width: 700px; }
+th, td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+th { background-color: var(--bg-sidebar); color: #fff; font-weight: 500; font-size: 14px; }
+th:first-child { border-top-left-radius: 8px; }
+th:last-child { border-top-right-radius: 8px; }
+tr:hover { background-color: #fdfdfd; }
+
+/* REGRAS DE RESPONSIVIDADE (Telas menores) */
+@media (max-width: 992px) {
+    body { flex-direction: column; }
+    
+    .sidebar { 
+        width: 100%; 
+        min-width: 100%;
+        border-radius: 0; 
+        padding: 15px; 
+        flex-direction: column; 
+        align-items: center;
+    }
+    
+    .toggle-btn { display: none; } 
+    .user-profile { margin-bottom: 20px; }
+    
+    .menu-items { 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        width: 100%;
+    }
+    .sidebar a { 
+        margin-bottom: 5px; 
+        padding: 10px 15px; 
+        flex: 1; 
+        text-align: center; 
+        min-width: 140px; 
+        margin: 5px; 
+        justify-content: center;
+    }
+
+    .main-content, .sidebar.collapsed ~ .main-content { 
+        padding: 20px; 
+        max-width: 100vw;
+    }
+}
