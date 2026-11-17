@@ -28,6 +28,9 @@
             <a href="index.php" title="Dashboard Pet">
                 <i class="fas fa-th-large"></i> <span class="menu-text">Dash Pet</span>
             </a>
+            <a href="vendas-detalhadas.php" title="Visão Detalhada de Vendas">
+                <i class="fas fa-list-alt"></i> <span class="menu-text">Vendas Detalhadas</span>
+            </a>
             <a href="clientes.php" title="Cadastro de Clientes">
                 <i class="fas fa-users"></i> <span class="menu-text">Clientes</span>
             </a>
@@ -48,5 +51,4 @@
             </a>
         </div>
     </div>
-    <div class="main-content" id="mainContent">
-        
+    <div class="main-content" id="mainContent"></div>
