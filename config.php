@@ -1,6 +1,11 @@
 <?php
 // config.php - Configuração de conexão com o banco de dados
 
+//define('DB_HOST', '192.168.15.8');
+//define('DB_PORT', '3306');
+//define('DB_NAME', 'db_new_pet');
+//define('DB_USER', 'casaos');
+//define('DB_PASS', 'casaos');
 define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
 define('DB_NAME', 'db_new_pet');

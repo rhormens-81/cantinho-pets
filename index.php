@@ -24,10 +24,15 @@ try {
     $total_mes = $valor_pagos + $valor_fiados;
     $qtd_servicos = $qtd_pagos + $qtd_fiados;
 
-    // 2. Vendas por dia do mês
+    // 2. Vendas por dia do mês (Apenas PAGOS)
     $stmt = $pdo->prepare("SELECT DATE(data_venda) as dia, SUM(valor) as total FROM vendas WHERE DATE_FORMAT(data_venda, '%Y-%m') = ? AND tipo != 'fiado' GROUP BY dia ORDER BY dia");
     $stmt->execute([$selected_month]);
     $vendas_por_dia = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 2.1 NOVO: Faturamento Total por dia do mês (PAGOS + FIADOS)
+    $stmt = $pdo->prepare("SELECT DATE(data_venda) as dia, SUM(valor) as total FROM vendas WHERE DATE_FORMAT(data_venda, '%Y-%m') = ? GROUP BY dia ORDER BY dia");
+    $stmt->execute([$selected_month]);
+    $faturamento_total_dia_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // 3. Atendimentos/Serviços por dia do mês
     $stmt = $pdo->prepare("SELECT DATE(data_venda) as dia, COUNT(id) as atendimentos FROM vendas WHERE DATE_FORMAT(data_venda, '%Y-%m') = ? GROUP BY dia ORDER BY dia");
@@ -40,12 +45,16 @@ try {
     $date_end->modify('last day of this month');
     $days = [];
     $totais_por_dia = [];
+    $faturamento_total_por_dia = [];
     $atendimentos_por_dia = [];
 
     $period = new DatePeriod($date_start, new DateInterval('P1D'), $date_end->modify('+1 day'));
     
     $map_vendas = [];
     foreach ($vendas_por_dia as $row) { $map_vendas[$row['dia']] = (float) $row['total']; }
+
+    $map_faturamento_total = [];
+    foreach ($faturamento_total_dia_raw as $row) { $map_faturamento_total[$row['dia']] = (float) $row['total']; }
     
     $map_atendimentos = [];
     foreach ($atendimentos_dia_raw as $row) { $map_atendimentos[$row['dia']] = (int) $row['atendimentos']; }
@@ -54,6 +63,7 @@ try {
         $d = $dt->format('Y-m-d');
         $days[] = $dt->format('d');
         $totais_por_dia[] = isset($map_vendas[$d]) ? round($map_vendas[$d], 2) : 0.00;
+        $faturamento_total_por_dia[] = isset($map_faturamento_total[$d]) ? round($map_faturamento_total[$d], 2) : 0.00;
         $atendimentos_por_dia[] = isset($map_atendimentos[$d]) ? $map_atendimentos[$d] : 0;
     }
 
@@ -87,7 +97,7 @@ try {
 
 } catch (Exception $e) {
     $error = "Erro ao buscar dados: " . $e->getMessage();
-    $days = []; $totais_por_dia = []; $atendimentos_por_dia = [];
+    $days = []; $totais_por_dia = []; $faturamento_total_por_dia = []; $atendimentos_por_dia = [];
     $monthly_labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     $monthly_totals = array_fill(0, 12, 0.00);
     $top_servicos = [];
@@ -96,28 +106,28 @@ try {
 include 'header.php';
 ?>
 
-<!-- Estilos para a nova estrutura de gráficos flexível -->
 <style>
     .dashboard-container { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 100%; }
     
     .form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; width: 100%; align-items: flex-end; }
     
-    /* NOVA REGRA: Grid fluido para os gráficos lado a lado */
-    .charts-grid-fluid { 
+    /* Grid simétrico de 2 colunas para encaixe perfeito dos gráficos */
+    .charts-grid-balanced { 
         display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Organiza lado a lado até caber, depois joga pra baixo */
+        grid-template-columns: repeat(2, 1fr); 
         gap: 20px; 
         width: 100%; 
         margin-bottom: 40px;
     }
+
+    /* Faz o gráfico anual ocupar a linha inteira na base, fechando o grid sem buracos */
+    .chart-full-width {
+        grid-column: 1 / -1;
+    }
     
     @media (max-width: 992px) {
         .form-grid { grid-template-columns: 1fr; }
-    }
-    
-    /* Previne que em celulares o mínimo de 400px quebre a tela */
-    @media (max-width: 480px) {
-        .charts-grid-fluid { grid-template-columns: 1fr; }
+        .charts-grid-balanced { grid-template-columns: 1fr; }
     }
 
     .dash-card { position: relative; overflow: hidden; }
@@ -136,8 +146,7 @@ include 'header.php';
     .chart-container h3 { font-size: 16px; color: #555; margin-bottom: 5px; }
     .chart-container p { font-size: 12px; color: #999; margin-bottom: 15px; }
     
-    /* A div flex-grow: 1 garante que o canvas preencha bem o espaço disponível */
-    .canvas-wrap { position: relative; height: 300px; width: 100%; flex-grow: 1; }
+    .canvas-wrap { position: relative; height: 290px; width: 100%; flex-grow: 1; }
 </style>
 
 <div class="dashboard-container">
@@ -196,19 +205,28 @@ include 'header.php';
         </div>
     </div>
 
-    <!-- SEÇÃO 3: GRÁFICOS FLUIDOS LADO A LADO -->
-    <div class="charts-grid-fluid">
+    <!-- SEÇÃO 3: GRÁFICOS ENCAIXADOS EM GRID 2x2 + BASE LARGA -->
+    <div class="charts-grid-balanced">
         
-        <!-- Gráfico 1 -->
+        <!-- Gráfico 1: NOVO (Faturamento Total Diário: Pagos + Fiados) -->
+        <div class="chart-container" style="border-top-color: #4caf50;">
+            <h3>Movimento Total Diário (Pagos + Fiados) — <?= htmlspecialchars($month_label) ?></h3>
+            <p>Soma de tudo que foi gerado por dia no mês (caixa + a receber).</p>
+            <div class="canvas-wrap">
+                <canvas id="chartFaturamentoTotalDia"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Vendas Diárias (Apenas Pagos) -->
         <div class="chart-container">
-            <h3>Vendas Diárias (Pagos) — <?= htmlspecialchars($month_label) ?></h3>
-            <p>Acompanhamento de entradas reais no caixa por dia.</p>
+            <h3>Vendas Diárias (Apenas Pagos) — <?= htmlspecialchars($month_label) ?></h3>
+            <p>Acompanhamento de entradas reais liquidadas no caixa por dia.</p>
             <div class="canvas-wrap">
                 <canvas id="chartVendasDia"></canvas>
             </div>
         </div>
 
-        <!-- Gráfico 2 -->
+        <!-- Gráfico 3: Volume de Atendimentos -->
         <div class="chart-container" style="border-top-color: #2196F3;">
             <h3>Volume de Atendimentos — <?= htmlspecialchars($month_label) ?></h3>
             <p>Quantidade de serviços executados diariamente.</p>
@@ -217,7 +235,7 @@ include 'header.php';
             </div>
         </div>
 
-        <!-- Gráfico 3 -->
+        <!-- Gráfico 4: Top Serviços -->
         <div class="chart-container" style="border-top-color: #9c27b0;">
             <h3>Top Serviços — <?= htmlspecialchars($month_label) ?></h3>
             <p>Os serviços mais populares do mês.</p>
@@ -226,10 +244,10 @@ include 'header.php';
             </div>
         </div>
         
-        <!-- Gráfico 4 -->
-        <div class="chart-container" style="border-top-color: #ff9800;">
+        <!-- Gráfico 5: Comparativo Mensal (Ocupa a largura total na base) -->
+        <div class="chart-container chart-full-width" style="border-top-color: #ff9800;">
             <h3>Comparativo Mensal — Ano <?= htmlspecialchars($selected_year) ?></h3>
-            <p>Visão geral de faturamento ao longo dos meses.</p>
+            <p>Visão geral de faturamento (pagos + fiados) ao longo dos meses.</p>
             <div class="canvas-wrap">
                 <canvas id="chartVendasMes"></canvas>
             </div>
@@ -243,6 +261,7 @@ include 'header.php';
 <script>
     const labelsDias = <?= json_encode($days, JSON_UNESCAPED_UNICODE) ?>;
     const totaisDias = <?= json_encode($totais_por_dia) ?>;
+    const faturamentoTotalDias = <?= json_encode($faturamento_total_por_dia) ?>;
     const atendimentosDias = <?= json_encode($atendimentos_por_dia) ?>;
     
     const servicosLabels = <?= json_encode(array_column($top_servicos, 'nome'), JSON_UNESCAPED_UNICODE) ?>;
@@ -252,16 +271,37 @@ include 'header.php';
     const monthlyTotals = <?= json_encode($monthly_totals) ?>;
 
     const colorPrimary = '#ff6b8b';
+    const colorGreen = '#4caf50';
     const colorBlue = '#2196F3';
     const colorBlueLight = 'rgba(33, 150, 243, 0.2)';
     const colorOrange = '#ff9800';
 
+    // 1. Gráfico Movimento Total Diário (Pagos + Fiados)
+    new Chart(document.getElementById('chartFaturamentoTotalDia').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labelsDias,
+            datasets: [{
+                label: 'Total Gerado (R$)',
+                data: faturamentoTotalDias,
+                backgroundColor: colorGreen,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 2. Gráfico Vendas Diárias (Apenas Pagos)
     new Chart(document.getElementById('chartVendasDia').getContext('2d'), {
         type: 'bar',
         data: {
             labels: labelsDias,
             datasets: [{
-                label: 'Faturamento (R$)',
+                label: 'Recebido no Caixa (R$)',
                 data: totaisDias,
                 backgroundColor: colorPrimary,
                 borderRadius: 4
@@ -274,6 +314,7 @@ include 'header.php';
         }
     });
 
+    // 3. Gráfico Volume de Atendimentos
     new Chart(document.getElementById('chartAtendimentosDia').getContext('2d'), {
         type: 'line',
         data: {
@@ -295,6 +336,7 @@ include 'header.php';
         }
     });
 
+    // 4. Gráfico Top Serviços
     new Chart(document.getElementById('chartTopServicos').getContext('2d'), {
         type: 'doughnut',
         data: {
@@ -311,6 +353,7 @@ include 'header.php';
         }
     });
 
+    // 5. Gráfico Comparativo Mensal
     new Chart(document.getElementById('chartVendasMes').getContext('2d'), {
         type: 'bar',
         data: {
